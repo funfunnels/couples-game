@@ -246,8 +246,20 @@ function App() {
     }
   };
 
-  // ... (keep the shareGame function)
-
+  const shareGame = () => {
+    const gameUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'משחק זוגי',
+        text: 'בואו לשחק במשחק זוגי מהנה!',
+        url: gameUrl
+      }).then(() => console.log('Successful share'))
+      .catch((error) => console.log('Error sharing', error));
+    } else {
+      alert(`שתף את הקישור הזה עם בן/בת הזוג שלך: ${gameUrl}`);
+    }
+  };
+  
   if (!gameId) {
     return <div>טוען משחק...</div>;
   }
