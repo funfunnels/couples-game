@@ -16,6 +16,20 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+firebase.auth().signInAnonymously().catch(function(error) {
+  console.error("Authentication error:", error);
+});
+
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    // User is signed in anonymously.
+    console.log("User is signed in anonymously");
+  } else {
+    // User is signed out.
+    console.log("User is signed out");
+  }
+});
+
 // Constants
 const DICE_ROLL_DURATION = 1000;
 const DICE_SIDES = 6;
