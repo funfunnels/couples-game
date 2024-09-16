@@ -33,6 +33,8 @@ firebase.auth().onAuthStateChanged(function(user) {
 // Constants
 const DICE_ROLL_DURATION = 1000;
 const DICE_SIDES = 6;
+const QUESTION_TIME_LIMIT = 120; // 2 minutes in seconds
+
 
 // Questions array (keep as is)
 const questions = [
@@ -126,6 +128,11 @@ const ProgressBar = ({ progress }) => (
     <div className="progress" style={{width: `${progress}%`}}></div>
   </div>
 );
+const Timer = ({ time }) => (
+  <div className="timer">
+    זמן נותר: {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
+  </div>
+);
 
 function App() {
   const [gameId, setGameId] = React.useState(null);
@@ -134,6 +141,8 @@ function App() {
   const [shuffledQuestions, setShuffledQuestions] = React.useState([]);
   const [diceValue, setDiceValue] = React.useState(null);
   const [rolling, setRolling] = React.useState(false);
+  const [currentTurn, setCurrentTurn] = React.useState('player1');
+  const [timeLeft, setTimeLeft] = React.useState(QUESTION_TIME_LIMIT);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -147,6 +156,37 @@ function App() {
     }
   }, []);
 
+  React.useEffect(() => {
+    if (gameId) {
+      const gameRef = database.ref(`games/${gameId}`);
+      gameRef.on('value', (snapshot) => {
+        const gameData = snapshot.val();
+        if (gameData) {
+          setShuffledQuestions(gameData.questions);
+          setCurrentQuestionIndex(gameData.currentQuestionIndex);
+          setDiceValue(gameData.diceValue);
+          setCurrentTurn(gameData.currentTurn);
+          setTimeLeft(gameData.timeLeft || QUESTION_TIME_LIMIT);
+        }
+      });
+      return () => gameRef.off();
+    }
+  }, [gameId]);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      if (timeLeft > 0) {
+        setTimeLeft(time => time - 1);
+        database.ref(`games/${gameId}`).update({ timeLeft: timeLeft - 1 });
+      } else {
+        alert("הזמן נגמר עברו לשאלה הבאה");
+        nextQuestion();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, gameId]);
+
   const createNewGame = () => {
     const newGameRef = database.ref('games').push();
     setGameId(newGameRef.key);
@@ -156,7 +196,9 @@ function App() {
     newGameRef.set({
       questions: shuffledQuestions,
       currentQuestionIndex: 0,
-      diceValue: null
+      diceValue: null,
+      currentTurn: 'player1',
+      timeLeft: QUESTION_TIME_LIMIT
     });
   };
 
@@ -168,64 +210,43 @@ function App() {
         setShuffledQuestions(gameData.questions);
         setCurrentQuestionIndex(gameData.currentQuestionIndex);
         setDiceValue(gameData.diceValue);
+        setCurrentTurn(gameData.currentTurn);
+        setTimeLeft(gameData.timeLeft || QUESTION_TIME_LIMIT);
       }
     });
   };
 
-  React.useEffect(() => {
-    if (gameId) {
-      const gameRef = database.ref(`games/${gameId}`);
-      gameRef.on('value', (snapshot) => {
-        const gameData = snapshot.val();
-        if (gameData) {
-          setShuffledQuestions(gameData.questions);
-          setCurrentQuestionIndex(gameData.currentQuestionIndex);
-          setDiceValue(gameData.diceValue);
-        }
-      });
-      return () => gameRef.off();
-    }
-  }, [gameId]);
-
-  const progress = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
-
   const rollDice = () => {
-    setRolling(true);
-    setTimeout(() => {
-      const newValue = Math.floor(Math.random() * DICE_SIDES) + 1;
-      setDiceValue(newValue);
-      setRolling(false);
-      database.ref(`games/${gameId}`).update({ diceValue: newValue });
-    }, DICE_ROLL_DURATION);
+    if (currentTurn === playerRole) {
+      setRolling(true);
+      setTimeout(() => {
+        const newValue = Math.floor(Math.random() * DICE_SIDES) + 1;
+        setDiceValue(newValue);
+        setRolling(false);
+        database.ref(`games/${gameId}`).update({ diceValue: newValue });
+      }, DICE_ROLL_DURATION);
+    }
   };
 
   const nextQuestion = () => {
     if (currentQuestionIndex < shuffledQuestions.length - 1) {
       const newIndex = currentQuestionIndex + 1;
+      const nextTurn = currentTurn === 'player1' ? 'player2' : 'player1';
       setCurrentQuestionIndex(newIndex);
       setDiceValue(null);
+      setTimeLeft(QUESTION_TIME_LIMIT);
       database.ref(`games/${gameId}`).update({
         currentQuestionIndex: newIndex,
-        diceValue: null
+        diceValue: null,
+        currentTurn: nextTurn,
+        timeLeft: QUESTION_TIME_LIMIT
       });
     } else {
       alert("המשחק הסתיים! תודה ששיחקתם.");
     }
   };
 
-  const shareGame = () => {
-    const gameUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
-    if (navigator.share) {
-      navigator.share({
-        title: 'משחק זוגי',
-        text: 'בואו לשחק במשחק זוגי מהנה!',
-        url: gameUrl
-      }).then(() => console.log('Successful share'))
-      .catch((error) => console.log('Error sharing', error));
-    } else {
-      alert(`שתף את הקישור הזה עם בן/בת הזוג שלך: ${gameUrl}`);
-    }
-  };
+  // ... (keep the shareGame function)
 
   if (!gameId) {
     return <div>טוען משחק...</div>;
@@ -240,10 +261,11 @@ function App() {
           className="couple-image" 
         />
       </div>
-      <ProgressBar progress={progress} />
+      <ProgressBar progress={(currentQuestionIndex + 1) / shuffledQuestions.length * 100} />
+      <Timer time={timeLeft} />
       <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
       <Dice rolling={rolling} value={diceValue || '?'} />
-      <button className="button" onClick={rollDice} disabled={rolling || playerRole !== 'player1'}>
+      <button className="button" onClick={rollDice} disabled={rolling || currentTurn !== playerRole}>
         {rolling ? 'מגלגל...' : 'גלגל קובייה'}
       </button>
       {!rolling && diceValue && (
@@ -251,12 +273,13 @@ function App() {
           {getAnswerMethod(diceValue)}
         </p>
       )}
-      <button className="button" onClick={nextQuestion} disabled={playerRole !== 'player1'}>
+      <button className="button" onClick={nextQuestion} disabled={currentTurn !== playerRole}>
         שאלה הבאה
       </button>
       <button className="button share-button" onClick={shareGame}>
         הזמן שחקן
       </button>
+      <p>תור: {currentTurn === playerRole ? 'שלך' : 'של בן/בת הזוג'}</p>
     </div>
   );
 }
