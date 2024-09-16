@@ -59,6 +59,9 @@ function App() {
 
   return (
     <div className="app">
+          <div className="image-placeholder">
+        <img src="https://via.placeholder.com/150" alt="תמונה זוגית" className="couple-image" />
+      </div>
       <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
       <Dice rolling={rolling} value={diceValue || '?'} />
       <button className="button" onClick={rollDice} disabled={rolling}>
