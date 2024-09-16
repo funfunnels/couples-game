@@ -1,82 +1,110 @@
-import React, { useState } from 'react';
-import './styles.css';  // מייבא את קובץ ה-CSS
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap');
 
-const questions = [
-  "איך אתה רואה את חיי המשפחה שלנו בעוד 5 שנים?",
-  "מהו החלום הגדול ביותר שלך שהיית רוצה שנגשים יחד?",
-  "מהם שלושת הערכים החשובים ביותר עבורך בזוגיות?",
-  // ... הוסף את שאר השאלות כאן
-];
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Rubik', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-const shuffleArray = (array) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  max-width: 90%;
+  width: 400px;
+}
 
-const Dice = ({ rolling, value }) => {
-  return (
-    <div className={`dice ${rolling ? 'rolling' : ''}`}>
-      {value}
-    </div>
-  );
-};
+.question {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2rem;
+  line-height: 1.4;
+}
 
-const App = () => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [shuffledQuestions, setShuffledQuestions] = useState(shuffleArray([...questions]));
-  const [diceValue, setDiceValue] = useState(null);
-  const [rolling, setRolling] = useState(false);
+.dice {
+  width: 100px;
+  height: 100px;
+  background-color: white;
+  border: 2px solid #ffffff;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #764ba2;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  margin: 1.5rem 0;
+  transition: transform 0.3s ease;
+}
 
-  const rollDice = () => {
-    setRolling(true);
-    setTimeout(() => {
-      const newValue = Math.floor(Math.random() * 6) + 1;
-      setDiceValue(newValue);
-      setRolling(false);
-    }, 1000);
-  };
+.dice.rolling {
+  animation: shake 0.5s infinite;
+}
 
-  const nextQuestion = () => {
-    if (currentQuestionIndex < shuffledQuestions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setDiceValue(null);
-    } else {
-      alert("המשחק הסתיים! תודה ששיחקתם.");
-    }
-  };
+.button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1rem;
+  margin: 10px;
+  cursor: pointer;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
-  const getAnswerMethod = () => {
-    switch(diceValue) {
-      case 1: return "ענו כרגיל";
-      case 2: return "ענו מנקודת המבט של בן/בת הזוג";
-      case 3: return "ענו בפנטומימה";
-      case 4: return "ענו בציור";
-      case 5: return "ענו בשיר או בחרוז";
-      case 6: return "בחרו איך לענות";
-      default: return "הטילו את הקובייה";
-    }
-  };
+.button:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
 
-  return (
-    <div className="app">
-      <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
-      <Dice rolling={rolling} value={diceValue || '?'} />
-      <button className="button" onClick={rollDice} disabled={rolling}>
-        {rolling ? 'מגלגל...' : 'גלגל קובייה'}
-      </button>
-      {!rolling && diceValue && (
-        <p className="result">
-          {getAnswerMethod()}
-        </p>
-      )}
-      <button className="button" onClick={nextQuestion}>
-        שאלה הבאה
-      </button>
-    </div>
-  );
-};
+.button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 
-export default App;
+.result {
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  text-align: center;
+  font-weight: 400;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 1rem;
+  border-radius: 10px;
+  max-width: 80%;
+}
+
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
