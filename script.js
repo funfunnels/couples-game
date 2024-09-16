@@ -125,7 +125,7 @@ function App() {
   return (
     <div className="app">
       <div className="image-placeholder">
-        <img src="https://via.placeholder.com/150" alt="תמונה זוגית" className="couple-image" />
+        <img src="https://ourevent.co.il/wp-content/uploads/2024/05/WhatsApp-Image-2024-04-03-at-20.43.51.jpeg" alt="תמונה זוגית" className="couple-image" />
       </div>
       <div className="progress-bar">
         <div className="progress" style={{width: `${progress}%`}}></div>
