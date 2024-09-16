@@ -64,3 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('rollButton').addEventListener('click', rollDice);
     document.getElementById('nextButton').addEventListener('click', nextQuestion);
 });
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById('root')
+);
