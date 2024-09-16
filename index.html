@@ -7,13 +7,10 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="app" class="app">
-        <h1 id="question" class="question"></h1>
-        <div id="dice" class="dice">?</div>
-        <button id="rollButton" class="button">גלגל קובייה</button>
-        <p id="result" class="result"></p>
-        <button id="nextButton" class="button">שאלה הבאה</button>
-    </div>
-    <script src="script.js"></script>
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script type="text/babel" src="App.js"></script>
 </body>
 </html>
