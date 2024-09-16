@@ -27,6 +27,8 @@ function App() {
   const [diceValue, setDiceValue] = React.useState(null);
   const [rolling, setRolling] = React.useState(false);
 
+  const progress = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
+
   const rollDice = () => {
     setRolling(true);
     setTimeout(() => {
@@ -57,10 +59,26 @@ function App() {
     }
   };
 
+  const shareGame = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'משחק זוגי',
+        text: 'בואו לשחק במשחק זוגי מהנה!',
+        url: window.location.href
+      }).then(() => console.log('Successful share'))
+      .catch((error) => console.log('Error sharing', error));
+    } else {
+      alert('שיתוף לא נתמך בדפדפן זה');
+    }
+  };
+
   return (
     <div className="app">
-          <div className="image-placeholder">
+      <div className="image-placeholder">
         <img src="https://via.placeholder.com/150" alt="תמונה זוגית" className="couple-image" />
+      </div>
+      <div className="progress-bar">
+        <div className="progress" style={{width: `${progress}%`}}></div>
       </div>
       <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
       <Dice rolling={rolling} value={diceValue || '?'} />
@@ -74,6 +92,9 @@ function App() {
       )}
       <button className="button" onClick={nextQuestion}>
         שאלה הבאה
+      </button>
+      <button className="button share-button" onClick={shareGame}>
+        שתף משחק
       </button>
     </div>
   );
