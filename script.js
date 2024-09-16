@@ -1,3 +1,26 @@
+// Import Firebase (add these scripts to your index.html)
+// <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+// <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+// Initialize Firebase (replace with your own config)
+const firebaseConfig = {
+  apiKey: "AIzaSyB5J1IV0HncV9W7jIj5aqTMD2AysUsaOR8",
+  authDomain: "couples-game-d0777.firebaseapp.com",
+  databaseURL: "https://couples-game-d0777-default-rtdb.firebaseio.com",
+  projectId: "couples-game-d0777",
+  storageBucket: "couples-game-d0777.appspot.com",
+  messagingSenderId: "60305831515",
+  appId: "1:60305831515:web:619adaa678540edc41b17e",
+  measurementId: "G-FXHDTQJT61"
+}
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// Constants
+const DICE_ROLL_DURATION = 1000;
+const DICE_SIDES = 6;
+
+// Questions array (keep as is)
 const questions = [
   "מהם שלושת הערכים החשובים ביותר עבורך בזוגיות?",
   "איך אתה רואה את חיי המשפחה שלנו בעוד 5 שנים?",
@@ -55,96 +78,170 @@ const questions = [
   "מהי הציפייה הכי חשובה שלך ממני כבן/בת זוג?",
   "איך אנחנו יכולים לשמור על הספונטניות והכיף בזוגיות שלנו?"
 ];
+// Utility functions
 const shuffleArray = (array) => {
-  for (let i = array.length - 1; i > 0; i--) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return array;
+  return shuffled;
 };
 
-const Dice = ({ rolling, value }) => {
-  return (
-    <div className={`dice ${rolling ? 'rolling' : ''}`}>
-      {value}
-    </div>
-  );
+const getAnswerMethod = (diceValue) => {
+  const methods = {
+    1: "ענו כרגיל",
+    2: "ענו מנקודת המבט של בן/בת הזוג",
+    3: "ענו בפנטומימה",
+    4: "ענו בציור",
+    5: "ענו בשיר או בחרוז",
+    6: "בחרו איך לענות"
+  };
+  return methods[diceValue] || "הטילו את הקובייה";
 };
+
+// Components
+const Dice = ({ rolling, value }) => (
+  <div className={`dice ${rolling ? 'rolling' : ''}`}>
+    {value}
+  </div>
+);
+
+const ProgressBar = ({ progress }) => (
+  <div className="progress-bar">
+    <div className="progress" style={{width: `${progress}%`}}></div>
+  </div>
+);
 
 function App() {
+  const [gameId, setGameId] = React.useState(null);
+  const [playerRole, setPlayerRole] = React.useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
-  const [shuffledQuestions, setShuffledQuestions] = React.useState(shuffleArray([...questions]));
+  const [shuffledQuestions, setShuffledQuestions] = React.useState([]);
   const [diceValue, setDiceValue] = React.useState(null);
   const [rolling, setRolling] = React.useState(false);
+
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('gameId');
+    if (id) {
+      setGameId(id);
+      setPlayerRole('player2');
+      joinGame(id);
+    } else {
+      createNewGame();
+    }
+  }, []);
+
+  const createNewGame = () => {
+    const newGameRef = database.ref('games').push();
+    setGameId(newGameRef.key);
+    setPlayerRole('player1');
+    const shuffledQuestions = shuffleArray([...questions]);
+    setShuffledQuestions(shuffledQuestions);
+    newGameRef.set({
+      questions: shuffledQuestions,
+      currentQuestionIndex: 0,
+      diceValue: null
+    });
+  };
+
+  const joinGame = (id) => {
+    const gameRef = database.ref(`games/${id}`);
+    gameRef.once('value', (snapshot) => {
+      const gameData = snapshot.val();
+      if (gameData) {
+        setShuffledQuestions(gameData.questions);
+        setCurrentQuestionIndex(gameData.currentQuestionIndex);
+        setDiceValue(gameData.diceValue);
+      }
+    });
+  };
+
+  React.useEffect(() => {
+    if (gameId) {
+      const gameRef = database.ref(`games/${gameId}`);
+      gameRef.on('value', (snapshot) => {
+        const gameData = snapshot.val();
+        if (gameData) {
+          setShuffledQuestions(gameData.questions);
+          setCurrentQuestionIndex(gameData.currentQuestionIndex);
+          setDiceValue(gameData.diceValue);
+        }
+      });
+      return () => gameRef.off();
+    }
+  }, [gameId]);
 
   const progress = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
 
   const rollDice = () => {
     setRolling(true);
     setTimeout(() => {
-      const newValue = Math.floor(Math.random() * 6) + 1;
+      const newValue = Math.floor(Math.random() * DICE_SIDES) + 1;
       setDiceValue(newValue);
       setRolling(false);
-    }, 1000);
+      database.ref(`games/${gameId}`).update({ diceValue: newValue });
+    }, DICE_ROLL_DURATION);
   };
 
   const nextQuestion = () => {
     if (currentQuestionIndex < shuffledQuestions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      const newIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(newIndex);
       setDiceValue(null);
+      database.ref(`games/${gameId}`).update({
+        currentQuestionIndex: newIndex,
+        diceValue: null
+      });
     } else {
       alert("המשחק הסתיים! תודה ששיחקתם.");
     }
   };
 
-  const getAnswerMethod = () => {
-    switch(diceValue) {
-      case 1: return "ענו כרגיל";
-      case 2: return "ענו מנקודת המבט של בן/בת הזוג";
-      case 3: return "ענו בפנטומימה";
-      case 4: return "ענו בציור";
-      case 5: return "ענו בשיר או בחרוז";
-      case 6: return "בחרו איך לענות";
-      default: return "הטילו את הקובייה";
-    }
-  };
-
   const shareGame = () => {
+    const gameUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
     if (navigator.share) {
       navigator.share({
         title: 'משחק זוגי',
         text: 'בואו לשחק במשחק זוגי מהנה!',
-        url: window.location.href
+        url: gameUrl
       }).then(() => console.log('Successful share'))
       .catch((error) => console.log('Error sharing', error));
     } else {
-      alert('שיתוף לא נתמך בדפדפן זה');
+      alert(`שתף את הקישור הזה עם בן/בת הזוג שלך: ${gameUrl}`);
     }
   };
+
+  if (!gameId) {
+    return <div>טוען משחק...</div>;
+  }
 
   return (
     <div className="app">
       <div className="image-placeholder">
-        <img src="https://ourevent.co.il/wp-content/uploads/2024/05/WhatsApp-Image-2024-04-03-at-20.43.51.jpeg" alt="תמונה זוגית" className="couple-image" />
+        <img 
+          src="https://ourevent.co.il/wp-content/uploads/2024/05/WhatsApp-Image-2024-04-03-at-20.43.51.jpeg" 
+          alt="תמונה זוגית" 
+          className="couple-image" 
+        />
       </div>
-      <div className="progress-bar">
-        <div className="progress" style={{width: `${progress}%`}}></div>
-      </div>
+      <ProgressBar progress={progress} />
       <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
       <Dice rolling={rolling} value={diceValue || '?'} />
-      <button className="button" onClick={rollDice} disabled={rolling}>
+      <button className="button" onClick={rollDice} disabled={rolling || playerRole !== 'player1'}>
         {rolling ? 'מגלגל...' : 'גלגל קובייה'}
       </button>
       {!rolling && diceValue && (
         <p className="result">
-          {getAnswerMethod()}
+          {getAnswerMethod(diceValue)}
         </p>
       )}
-      <button className="button" onClick={nextQuestion}>
+      <button className="button" onClick={nextQuestion} disabled={playerRole !== 'player1'}>
         שאלה הבאה
       </button>
       <button className="button share-button" onClick={shareGame}>
-        שתף משחק
+        הזמן שחקן
       </button>
     </div>
   );
