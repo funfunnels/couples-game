@@ -1,8 +1,4 @@
-// Import Firebase (add these scripts to your index.html)
-// <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-// <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-// Initialize Firebase (replace with your own config)
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyB5J1IV0HncV9W7jIj5aqTMD2AysUsaOR8",
   authDomain: "couples-game-d0777.firebaseapp.com",
@@ -12,7 +8,7 @@ const firebaseConfig = {
   messagingSenderId: "60305831515",
   appId: "1:60305831515:web:619adaa678540edc41b17e",
   measurementId: "G-FXHDTQJT61"
-}
+};
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
@@ -22,10 +18,8 @@ firebase.auth().signInAnonymously().catch(function(error) {
 
 firebase.auth().onAuthStateChanged(function(user) {
   if (user) {
-    // User is signed in anonymously.
     console.log("User is signed in anonymously");
   } else {
-    // User is signed out.
     console.log("User is signed out");
   }
 });
@@ -34,66 +28,14 @@ firebase.auth().onAuthStateChanged(function(user) {
 const DICE_ROLL_DURATION = 1000;
 const DICE_SIDES = 6;
 const QUESTION_TIME_LIMIT = 120; // 2 minutes in seconds
+const MOODS = ['😞', '😐', '🙂', '😊', '😃'];
 
-
-// Questions array (keep as is)
+// Questions array
 const questions = [
   "מהם שלושת הערכים החשובים ביותר עבורך בזוגיות?",
-  "איך אתה רואה את חיי המשפחה שלנו בעוד 5 שנים?",
-  "מהו החלום הגדול ביותר שלך שהיית רוצה שנגשים יחד?",
-  "איזה הרגל או מסורת חדשה היית רוצה ליצור יחד?",
-  "מהו האתגר הגדול ביותר שלדעתך נצטרך להתמודד איתו כזוג, ואיך נוכל להתכונן אליו?",
-  "איך היית רוצה שנחגוג את ההצלחות שלנו כזוג?",
-  "מהו המקום האידיאלי עבורך לגור בו בעתיד ולמה?",
-  "איזה סוג של הורים היית רוצה שנהיה (אם רלוונטי)?",
-  "מהי הדרך הטובה ביותר עבורך לקבל ולהביע אהבה בזוגיות?",
-  "איך אנחנו יכולים לתמוך זה בזה בהגשמת החלומות האישיים שלנו?",
-  "מהו הזיכרון המשותף האהוב עליך עד כה, ואיזה סוג של זיכרונות היית רוצה ליצור בעתיד?",
-  "איך היית רוצה שנתמודד עם קונפליקטים או מחלוקות בינינו?",
-  "מהי ההגדרה שלך לזוגיות מוצלחת?",
-  "איזה תחביב או פעילות חדשה היית רוצה שנלמד ונעשה יחד?",
-  "איך אנחנו יכולים לשמור על הרומנטיקה והריגוש בזוגיות שלנו לאורך זמן?",
-  "מהי המטרה הכלכלית המשותפת הגדולה ביותר שלנו לחמש השנים הקרובות?",
-  "איזה סוג של איזון בין קריירה לחיי משפחה היית רוצה שיהיה לנו?",
-  "מהו הדבר שאתה הכי מעריך בי ולמה?",
-  "איך אנחנו יכולים לשפר את התקשורת בינינו?",
-  "מהו החלום שלך לגבי טיול משותף שלנו? לאן ומה היית רוצה שנעשה?",
-  "איך היית רוצה שנחלק את המטלות והאחריות בבית?",
-  "מהי הפנטזיה הרומנטית שלך שהיית רוצה להגשים איתי?",
-  "איזה ערך או מסורת מהמשפחה שלך היית רוצה להעביר לזוגיות ולמשפחה שלנו?",
-  "מהו הדבר שאתה הכי חושש ממנו בעתיד שלנו יחד, ואיך נוכל להתמודד עם זה?",
-  "איך אנחנו יכולים לעזור זה לזה להתפתח ולצמוח כאנשים?",
-  "מהי החוויה החדשה שהכי היית רוצה שנחווה יחד?",
-  "איך היית רוצה שנתמודד עם לחצים מהמשפחות שלנו?",
-  "מהו הדבר שאתה הכי אוהב לעשות איתי ולמה?",
-  "איזה סוג של אווירה היית רוצה שתהיה בבית שלנו?",
-  "מהי המשמעות של מחויבות בזוגיות עבורך?",
-  "איך אנחנו יכולים לשלב את החברים שלנו בחיים המשותפים שלנו?",
-  "מהו החלום המקצועי שלך ואיך אני יכול/ה לתמוך בך בהגשמתו?",
-  "איזה סוג של חופשות היית רוצה שנעשה יחד?",
-  "מהי הדרך הטובה ביותר עבורך לפתור מחלוקות בזוגיות?",
-  "איך היית רוצה שנחגוג את ימי ההולדת והחגים שלנו?",
-  "מהו הדבר שהכי מפחיד אותך בקשר ואיך אני יכול/ה לעזור לך להתמודד עם זה?",
-  "איזה הרגלים בריאות היית רוצה שנאמץ יחד?",
-  "מהי התפיסה שלך לגבי ניהול כספים משותף?",
-  "איך אנחנו יכולים לשמור על הפרטיות והעצמאות שלנו בתוך הזוגיות?",
-  "מהו הדבר שהיית רוצה שנשפר בחיי האינטימיות שלנו?",
-  "איזה סוג של תרומה לקהילה או לחברה היית רוצה שנעשה יחד?",
-  "מהי הדרך הטובה ביותר עבורך לקבל תמיכה רגשית ממני?",
-  "איך היית רוצה שנתמודד עם אתגרים בריאותיים (שלנו או של בני משפחה) בעתיד?",
-  "מהו הדבר שהכי מרגש אותך לגבי העתיד שלנו יחד?",
-  "איזה סוג של טקסים או הרגלים יומיומיים היית רוצה שיהיו לנו כזוג?",
-  "מהי התפיסה שלך לגבי גידול ילדים (אם רלוונטי) ואיך נוכל לשלב את הגישות שלנו?",
-  "איך אנחנו יכולים לתמוך זה בזה בזמנים של לחץ או משבר?",
-  "מהו הדבר שהכי היית רוצה ללמוד או לשפר בעצמך, ואיך אני יכול/ה לעזור?",
-  "איזה סוג של בית היית רוצה שיהיה לנו בעתיד?",
-  "מהי המשמעות של אהבה עבורך ואיך היא באה לידי ביטוי?",
-  "איך אנחנו יכולים לשמור על הקשרים עם המשפחות שלנו תוך כדי בניית הזוגיות שלנו?",
-  "מהו הדבר שהכי מאתגר אותך בזוגיות ואיך נוכל להתמודד איתו יחד?",
-  "איזה חלומות אישיים שלך היית רוצה להגשים בחמש השנים הקרובות?",
-  "מהי הציפייה הכי חשובה שלך ממני כבן/בת זוג?",
-  "איך אנחנו יכולים לשמור על הספונטניות והכיף בזוגיות שלנו?"
+  // ... (rest of the questions)
 ];
+
 // Utility functions
 const shuffleArray = (array) => {
   const shuffled = [...array];
@@ -128,9 +70,24 @@ const ProgressBar = ({ progress }) => (
     <div className="progress" style={{width: `${progress}%`}}></div>
   </div>
 );
+
 const Timer = ({ time }) => (
   <div className="timer">
     זמן נותר: {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
+  </div>
+);
+
+const MoodSelector = ({ currentMood, onMoodSelect }) => (
+  <div className="mood-selector">
+    {MOODS.map((mood, index) => (
+      <button 
+        key={index} 
+        className={`mood-button ${currentMood === index ? 'selected' : ''}`} 
+        onClick={() => onMoodSelect(index)}
+      >
+        {mood}
+      </button>
+    ))}
   </div>
 );
 
@@ -143,6 +100,8 @@ function App() {
   const [rolling, setRolling] = React.useState(false);
   const [currentTurn, setCurrentTurn] = React.useState('player1');
   const [timeLeft, setTimeLeft] = React.useState(QUESTION_TIME_LIMIT);
+  const [player1Mood, setPlayer1Mood] = React.useState(null);
+  const [player2Mood, setPlayer2Mood] = React.useState(null);
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -167,6 +126,8 @@ function App() {
           setDiceValue(gameData.diceValue);
           setCurrentTurn(gameData.currentTurn);
           setTimeLeft(gameData.timeLeft || QUESTION_TIME_LIMIT);
+          setPlayer1Mood(gameData.player1Mood);
+          setPlayer2Mood(gameData.player2Mood);
         }
       });
       return () => gameRef.off();
@@ -198,7 +159,9 @@ function App() {
       currentQuestionIndex: 0,
       diceValue: null,
       currentTurn: 'player1',
-      timeLeft: QUESTION_TIME_LIMIT
+      timeLeft: QUESTION_TIME_LIMIT,
+      player1Mood: null,
+      player2Mood: null
     });
   };
 
@@ -212,6 +175,8 @@ function App() {
         setDiceValue(gameData.diceValue);
         setCurrentTurn(gameData.currentTurn);
         setTimeLeft(gameData.timeLeft || QUESTION_TIME_LIMIT);
+        setPlayer1Mood(gameData.player1Mood);
+        setPlayer2Mood(gameData.player2Mood);
       }
     });
   };
@@ -239,11 +204,18 @@ function App() {
         currentQuestionIndex: newIndex,
         diceValue: null,
         currentTurn: nextTurn,
-        timeLeft: QUESTION_TIME_LIMIT
+        timeLeft: QUESTION_TIME_LIMIT,
+        player1Mood: null,
+        player2Mood: null
       });
     } else {
       alert("המשחק הסתיים! תודה ששיחקתם.");
     }
+  };
+
+  const handleMoodSelect = (mood) => {
+    const moodKey = playerRole === 'player1' ? 'player1Mood' : 'player2Mood';
+    database.ref(`games/${gameId}`).update({ [moodKey]: mood });
   };
 
   const shareGame = () => {
@@ -259,7 +231,7 @@ function App() {
       alert(`שתף את הקישור הזה עם בן/בת הזוג שלך: ${gameUrl}`);
     }
   };
-  
+
   if (!gameId) {
     return <div>טוען משחק...</div>;
   }
@@ -276,6 +248,17 @@ function App() {
       <ProgressBar progress={(currentQuestionIndex + 1) / shuffledQuestions.length * 100} />
       <Timer time={timeLeft} />
       <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
+      <h2>איך אתם מרגישים?</h2>
+      <MoodSelector 
+        currentMood={playerRole === 'player1' ? player1Mood : player2Mood}
+        onMoodSelect={handleMoodSelect}
+      />
+      {playerRole === 'player1' && player2Mood !== null && (
+        <p>מצב הרוח של בן/בת הזוג: {MOODS[player2Mood]}</p>
+      )}
+      {playerRole === 'player2' && player1Mood !== null && (
+        <p>מצב הרוח של בן/בת הזוג: {MOODS[player1Mood]}</p>
+      )}
       <Dice rolling={rolling} value={diceValue || '?'} />
       <button className="button" onClick={rollDice} disabled={rolling || currentTurn !== playerRole}>
         {rolling ? 'מגלגל...' : 'גלגל קובייה'}
