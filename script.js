@@ -457,11 +457,11 @@ function App() {
           {getAnswerMethod(diceValue)}
         </p>
       )}
-    {!currentChallenge && !currentTruthOrDare && (
-        <>
+      {!currentChallenge && !currentTruthOrDare && (
+        <div>
           <button className="button" onClick={startChallenge}>התחל אתגר</button>
           <button className="button" onClick={startTruthOrDare}>אמת או חובה</button>
-        </>
+        </div>
       )}
 
       {currentChallenge && (
@@ -480,7 +480,7 @@ function App() {
           <button className="button" onClick={completeTruthOrDare}>סיימנו את המשימה</button>
         </div>
       )}
-    <div className="answer-section">
+      <div className="answer-section">
         <textarea
           value={currentAnswer}
           onChange={handleAnswerChange}
@@ -508,4 +508,4 @@ ReactDOM.render(
     <App />
   </React.StrictMode>,
   document.getElementById('root')
-)
+);
