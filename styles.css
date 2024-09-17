@@ -132,7 +132,31 @@ body {
   font-weight: bold;
   margin: 1rem 0;
 }
+.mood-selector {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
 
+.mood-button {
+  font-size: 1.5rem;
+  background: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+  margin: 0 0.5rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.mood-button:hover {
+  transform: scale(1.1);
+}
+
+.mood-button.selected {
+  border-color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.1);
+}
 @media (max-width: 480px) {
   .app {
     padding: 1rem;
