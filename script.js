@@ -143,6 +143,21 @@ const MoodSelector = ({ currentMood, onMoodSelect }) => (
   </div>
 );
 
+const MemoryBank = ({ memories, onSaveMemory }) => (
+  <div className="memory-bank">
+    <h3>זכרונות משותפים</h3>
+    <button className="button" onClick={onSaveMemory}>שמור זיכרון</button>
+    <ul>
+      {memories.map((memory, index) => (
+        <li key={index}>
+          <strong>שאלה:</strong> {memory.question}<br />
+          <strong>תשובה:</strong> {memory.answer}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
 function App() {
   const [gameId, setGameId] = React.useState(null);
   const [playerRole, setPlayerRole] = React.useState(null);
@@ -154,6 +169,8 @@ function App() {
   const [timeLeft, setTimeLeft] = React.useState(QUESTION_TIME_LIMIT);
   const [player1Mood, setPlayer1Mood] = React.useState(null);
   const [player2Mood, setPlayer2Mood] = React.useState(null);
+  const [memories, setMemories] = React.useState([]);
+  const [currentAnswer, setCurrentAnswer] = React.useState('');
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -199,6 +216,38 @@ function App() {
 
     return () => clearInterval(timer);
   }, [timeLeft, gameId]);
+ 
+  React.useEffect(() => {
+    if (gameId) {
+      const memoriesRef = database.ref(`games/${gameId}/memories`);
+      memoriesRef.on('value', (snapshot) => {
+        const memoriesData = snapshot.val();
+        if (memoriesData) {
+          setMemories(Object.values(memoriesData));
+        }
+      });
+      return () => memoriesRef.off();
+    }
+  }, [gameId]);
+  
+  const saveMemory = () => {
+    if (currentAnswer.trim() !== '') {
+      const newMemory = {
+        question: shuffledQuestions[currentQuestionIndex],
+        answer: currentAnswer,
+        timestamp: Date.now()
+      };
+      const memoriesRef = database.ref(`games/${gameId}/memories`).push();
+      memoriesRef.set(newMemory);
+      setCurrentAnswer('');
+    } else {
+      alert('אנא הזן תשובה לפני שמירת הזיכרון');
+    }
+  };
+
+  const handleAnswerChange = (event) => {
+    setCurrentAnswer(event.target.value);
+  };
 
   const createNewGame = () => {
     const newGameRef = database.ref('games').push();
@@ -213,7 +262,8 @@ function App() {
       currentTurn: 'player1',
       timeLeft: QUESTION_TIME_LIMIT,
       player1Mood: null,
-      player2Mood: null
+      player2Mood: null,
+      memories: {}
     });
   };
 
@@ -229,10 +279,11 @@ function App() {
         setTimeLeft(gameData.timeLeft || QUESTION_TIME_LIMIT);
         setPlayer1Mood(gameData.player1Mood);
         setPlayer2Mood(gameData.player2Mood);
+        setMemories(gameData.memories ? Object.values(gameData.memories) : []);
       }
     });
   };
-
+  
   const rollDice = () => {
     if (currentTurn === playerRole) {
       setRolling(true);
@@ -296,7 +347,7 @@ function App() {
           alt="תמונה זוגית" 
           className="couple-image" 
         />
-      </div>
+      </div>     
       <ProgressBar progress={(currentQuestionIndex + 1) / shuffledQuestions.length * 100} />
       <Timer time={timeLeft} />
       <h1 className="question">{shuffledQuestions[currentQuestionIndex]}</h1>
@@ -305,6 +356,7 @@ function App() {
         currentMood={playerRole === 'player1' ? player1Mood : player2Mood}
         onMoodSelect={handleMoodSelect}
       />
+          
       {playerRole === 'player1' && player2Mood !== null && (
         <p>מצב הרוח של בן/בת הזוג: {MOODS[player2Mood]}</p>
       )}
@@ -320,6 +372,14 @@ function App() {
           {getAnswerMethod(diceValue)}
         </p>
       )}
+     <div className="answer-section">
+        <textarea
+          value={currentAnswer}
+          onChange={handleAnswerChange}
+          placeholder="הזן את תשובתך כאן"
+        />
+      </div>
+      <MemoryBank memories={memories} onSaveMemory={saveMemory} />
       <button className="button" onClick={nextQuestion} disabled={currentTurn !== playerRole}>
         שאלה הבאה
       </button>
