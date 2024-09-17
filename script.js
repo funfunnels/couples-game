@@ -143,10 +143,21 @@ const MoodSelector = ({ currentMood, onMoodSelect }) => (
   </div>
 );
 
-const MemoryBank = ({ memories, onSaveMemory }) => (
+const Popup = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="popup-overlay">
+      <div className="popup-content">
+        <button className="close-button" onClick={onClose}>×</button>
+        {children}
+      </div>
+    </div>
+  );
+};
+const MemoryBank = ({ memories }) => (
   <div className="memory-bank">
     <h3>זכרונות משותפים</h3>
-    <button className="button" onClick={onSaveMemory}>שמור זיכרון</button>
     <ul>
       {memories.map((memory, index) => (
         <li key={index}>
@@ -171,6 +182,8 @@ function App() {
   const [player2Mood, setPlayer2Mood] = React.useState(null);
   const [memories, setMemories] = React.useState([]);
   const [currentAnswer, setCurrentAnswer] = React.useState('');
+  const [isMemoryBankOpen, setIsMemoryBankOpen] = React.useState(false);
+
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -230,25 +243,6 @@ function App() {
     }
   }, [gameId]);
   
-  const saveMemory = () => {
-    if (currentAnswer.trim() !== '') {
-      const newMemory = {
-        question: shuffledQuestions[currentQuestionIndex],
-        answer: currentAnswer,
-        timestamp: Date.now()
-      };
-      const memoriesRef = database.ref(`games/${gameId}/memories`).push();
-      memoriesRef.set(newMemory);
-      setCurrentAnswer('');
-    } else {
-      alert('אנא הזן תשובה לפני שמירת הזיכרון');
-    }
-  };
-
-  const handleAnswerChange = (event) => {
-    setCurrentAnswer(event.target.value);
-  };
-
   const createNewGame = () => {
     const newGameRef = database.ref('games').push();
     setGameId(newGameRef.key);
@@ -338,6 +332,37 @@ function App() {
   if (!gameId) {
     return <div>טוען משחק...</div>;
   }
+  const saveMemory = () => {
+    if (currentAnswer.trim() !== '') {
+      const newMemory = {
+        question: shuffledQuestions[currentQuestionIndex],
+        answer: currentAnswer,
+        timestamp: Date.now()
+      };
+      const memoriesRef = database.ref(`games/${gameId}/memories`).push();
+      memoriesRef.set(newMemory);
+      setCurrentAnswer('');
+      alert('הזיכרון נשמר בהצלחה!');
+    } else {
+      alert('אנא הזן תשובה לפני שמירת הזיכרון');
+    }
+  };
+
+  const handleAnswerChange = (event) => {
+    setCurrentAnswer(event.target.value);
+  };
+
+  const openMemoryBank = () => {
+    setIsMemoryBankOpen(true);
+  };
+
+  const closeMemoryBank = () => {
+    setIsMemoryBankOpen(false);
+  };
+
+  if (!gameId) {
+    return <div>טוען משחק...</div>;
+  }
 
   return (
     <div className="app">
@@ -372,14 +397,18 @@ function App() {
           {getAnswerMethod(diceValue)}
         </p>
       )}
-     <div className="answer-section">
+    <div className="answer-section">
         <textarea
           value={currentAnswer}
           onChange={handleAnswerChange}
           placeholder="הזן את תשובתך כאן"
         />
       </div>
-      <MemoryBank memories={memories} onSaveMemory={saveMemory} />
+      <button className="button" onClick={saveMemory}>שמור זיכרון</button>
+      <button className="button" onClick={openMemoryBank}>צפה בזכרונות</button>
+      <Popup isOpen={isMemoryBankOpen} onClose={closeMemoryBank}>
+        <MemoryBank memories={memories} />
+      </Popup>
       <button className="button" onClick={nextQuestion} disabled={currentTurn !== playerRole}>
         שאלה הבאה
       </button>
@@ -396,4 +425,4 @@ ReactDOM.render(
     <App />
   </React.StrictMode>,
   document.getElementById('root')
-);
+)
