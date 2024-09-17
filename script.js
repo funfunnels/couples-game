@@ -88,6 +88,22 @@ const questions = [
   "מהי הציפייה הכי חשובה שלך ממני כבן/בת זוג?",
   "איך אנחנו יכולים לשמור על הספונטניות והכיף בזוגיות שלנו?"
 ];
+
+const challenges = [
+  "שם 5 דברים שאתה אוהב בבן/בת הזוג שלך תוך 30 שניות",
+  "מצא 3 דברים משותפים ביניכם שלא ידעתם קודם תוך דקה",
+  "תן 3 מחמאות לבן/בת הזוג שלך בתוך 20 שניות",
+  // Add more challenges here
+];
+
+const truthOrDare = [
+  { type: 'truth', question: "מה הדבר הכי מביך שעשית בנוכחות בן/בת הזוג שלך?" },
+  { type: 'dare', task: "תן נשיקה לבן/בת הזוג שלך במקום הכי מפתיע" },
+  { type: 'truth', question: "מה הדבר שהכי מפחיד אותך בקשר?" },
+  { type: 'dare', task: "שיר את השיר האהוב על בן/בת הזוג שלך" },
+  // Add more truth or dare items here
+];
+
 // Utility functions
 const shuffleArray = (array) => {
   const shuffled = [...array];
@@ -126,6 +142,12 @@ const ProgressBar = ({ progress }) => (
 const Timer = ({ time }) => (
   <div className="timer">
     זמן נותר: {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
+  </div>
+);
+
+const ChallengeTimer = ({ time }) => (
+  <div className="challenge-timer">
+    זמן נותר: {time} שניות
   </div>
 );
 
@@ -183,6 +205,9 @@ function App() {
   const [memories, setMemories] = React.useState([]);
   const [currentAnswer, setCurrentAnswer] = React.useState('');
   const [isMemoryBankOpen, setIsMemoryBankOpen] = React.useState(false);
+  const [currentChallenge, setCurrentChallenge] = React.useState(null);
+  const [challengeTimeLeft, setChallengeTimeLeft] = React.useState(0);
+  const [currentTruthOrDare, setCurrentTruthOrDare] = React.useState(null);
 
 
   React.useEffect(() => {
@@ -243,6 +268,19 @@ function App() {
     }
   }, [gameId]);
   
+  React.useEffect(() => {
+    let timer;
+    if (currentChallenge && challengeTimeLeft > 0) {
+      timer = setInterval(() => {
+        setChallengeTimeLeft(time => time - 1);
+      }, 1000);
+    } else if (challengeTimeLeft === 0 && currentChallenge) {
+      alert("זמן האתגר נגמר!");
+      setCurrentChallenge(null);
+    }
+    return () => clearInterval(timer);
+  }, [challengeTimeLeft, currentChallenge]);
+
   const createNewGame = () => {
     const newGameRef = database.ref('games').push();
     setGameId(newGameRef.key);
@@ -359,6 +397,28 @@ function App() {
   const closeMemoryBank = () => {
     setIsMemoryBankOpen(false);
   };
+  
+  const startChallenge = () => {
+    const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+    setCurrentChallenge(randomChallenge);
+    setChallengeTimeLeft(CHALLENGE_TIME_LIMIT);
+  };
+
+  const startTruthOrDare = () => {
+    const randomItem = truthOrDare[Math.floor(Math.random() * truthOrDare.length)];
+    setCurrentTruthOrDare(randomItem);
+  };
+
+  const completeChallenge = () => {
+    alert("כל הכבוד! השלמתם את האתגר!");
+    setCurrentChallenge(null);
+    setChallengeTimeLeft(0);
+  };
+
+  const completeTruthOrDare = () => {
+    alert("כל הכבוד! השלמתם את משימת האמת או חובה!");
+    setCurrentTruthOrDare(null);
+  };
 
   if (!gameId) {
     return <div>טוען משחק...</div>;
@@ -396,6 +456,29 @@ function App() {
         <p className="result">
           {getAnswerMethod(diceValue)}
         </p>
+      )}
+    {!currentChallenge && !currentTruthOrDare && (
+        <>
+          <button className="button" onClick={startChallenge}>התחל אתגר</button>
+          <button className="button" onClick={startTruthOrDare}>אמת או חובה</button>
+        </>
+      )}
+
+      {currentChallenge && (
+        <div className="challenge-section">
+          <h2>אתגר!</h2>
+          <p>{currentChallenge}</p>
+          <ChallengeTimer time={challengeTimeLeft} />
+          <button className="button" onClick={completeChallenge}>סיימנו את האתגר</button>
+        </div>
+      )}
+
+      {currentTruthOrDare && (
+        <div className="truth-or-dare-section">
+          <h2>{currentTruthOrDare.type === 'truth' ? 'אמת' : 'חובה'}</h2>
+          <p>{currentTruthOrDare.type === 'truth' ? currentTruthOrDare.question : currentTruthOrDare.task}</p>
+          <button className="button" onClick={completeTruthOrDare}>סיימנו את המשימה</button>
+        </div>
       )}
     <div className="answer-section">
         <textarea
